@@ -33,11 +33,11 @@ public class PasswordTest extends BaseTest {
         String algorithmName = "md5";
         String username = "liu";
         String password = "123";
-        String salt1 = username;
+       // String salt1 = username;
         String salt2 = new SecureRandomNumberGenerator().nextBytes().toHex();
         int hashIterations = 2;
 
-        SimpleHash hash = new SimpleHash(algorithmName, password, salt1 + salt2, hashIterations);
+        SimpleHash hash = new SimpleHash(algorithmName, password, username + salt2, hashIterations);
         String encodedPassword = hash.toHex();
         System.out.println(salt2);
         System.out.println(encodedPassword);
@@ -55,7 +55,27 @@ public class PasswordTest extends BaseTest {
         BeanUtilsBean.getInstance().getConvertUtils().register(new EnumConverter(), JdbcRealm.SaltStyle.class);
 
         //使用testGeneratePassword生成的散列密码
-        login("classpath:shiro-jdbc-hashedCredentialsMatcher.ini", "liu", "123");
+        try{
+        	login("classpath:shiro-jdbc-hashedCredentialsMatcher.ini", "liu", "123");
+        }catch(Exception e){
+        	 System.out.println("异常信息："+e.getMessage());
+        	 System.out.println("用户已经锁定");
+        }
+        
+        System.out.println("新增防暴力破解，执行第二遍的时候，提示用户已经锁定");
+        for(int i = 1; i <= 5; i++) {
+            try {
+                login("classpath:shiro-retryLimitHashedCredentialsMatcher.ini", "liu", "234");
+            } catch (Exception e) {System.out.println("密码错误地鼠："+i);}
+        }
+        //使用testGeneratePassword生成的散列密码
+        try{
+        	login("classpath:shiro-jdbc-hashedCredentialsMatcher.ini", "liu", "123");
+        }catch(Exception e){
+        	 System.out.println(e);
+        	 System.out.println("用户已经锁定");
+        }
+        
     }
 
 
